@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import cv2
+import timeit
 #%%
 def unpickle(file):
     '''
@@ -65,9 +66,9 @@ def img_resize(img, factor):
     return res.astype('int')
 
 #%%
-def get_random_img():
+def get_random_img_idx():
     '''
-    Get a random list of image number and their scaling factor
+    Get a random list of image number, their scaling factor and their height 
     the number of images vary between 2 and 5
     '''
     n = random.randint(2, 5)
@@ -78,6 +79,73 @@ def get_random_img():
         x = random.uniform(1.0, 2.2)
         fact = np.append(fact, x)
         ht = np.append(ht, int(32*x))
-    return idx, fact, ht 
+    return idx, fact, ht.astype('int') 
 #%%
-idx, fact, ht = get_random_img()
+idx, fact, ht = get_random_img_idx()
+#%%
+def is_overlap(x, y, ht):
+    '''
+    Given the x and y co-ordinates(mid-point) of the images and their height
+    tell whether they overlap or not
+    '''
+    n = len(x)
+    sx = [0]*n
+    sy = [0]*n
+    ex = [0]*n
+    ey = [0]*n
+    for i in range(n):
+        sx[i] = x[i]
+        sy[i] = y[i]
+        l = ht[i]
+        ex[i] = x[i]+l
+        ey[i] = y[i]+l
+    
+    for i in range(n):
+        for j in range(n):
+            if i==j:
+                continue
+            elif sx[i]<=sx[j] and ex[i]>=sx[j] and sy[i]<=sy[j] and ey[i]>=sy[j]:
+                return 1
+            elif sx[i]<=ex[j] and ex[i]>=ex[j] and sy[i]<=sy[j] and ey[i]>=sy[j]:
+                return 1
+            elif sx[i]<=ex[j] and ex[i]>=ex[j] and sy[i]<=ey[j] and ey[i]>=ey[j]:
+                return 1
+            elif sx[i]<=sx[j] and ex[i]>=sx[j] and sy[i]<=sy[j] and ey[i]>=sy[j]:
+                return 1
+    return 0
+
+    
+def get_cor(ht):
+    '''
+    Given ht => heights of the scaled image
+    Results out the co-ordinates of the images such that they don't overlap
+    '''
+    n = len(ht)
+    max_ht = int((max(ht)+1)/2)
+    x = [max_ht]*n
+    y = [max_ht]*n
+    while(is_overlap(x, y, ht)):
+        x = random.sample(range(max_ht, 448-max_ht), n)
+        y = random.sample(range(max_ht, 448-max_ht), n)
+    return x, y
+#%%
+# start = timeit.default_timer()
+x, y = get_cor(ht)
+# stop = timeit.default_timer()
+# print('Time: ', stop - start)
+#%%
+def gen_image(x,y,idx,fact):
+    img = np.zeros((448,448,3))
+    for i in range(len(idx)):
+        tmp = img_resize(lt_img[idx[i]], fact[i])
+        l = tmp.shape[0]
+        sx = x[i]
+        sy = y[i]
+        ex = x[i]+l
+        ey = y[i]+l
+        for cx in range(l):
+            for cy in range(l):
+                img[sx+cx][sy+cy] = tmp[cx][cy]
+    return img.astype('int')
+#%%
+res = gen_image(x, y, idx, fact)
