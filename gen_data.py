@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import cv2
-import timeit
 #%%
 def unpickle(file):
     '''
@@ -80,8 +79,7 @@ def get_random_img_idx():
         fact = np.append(fact, x)
         ht = np.append(ht, int(32*x))
     return idx, fact, ht.astype('int') 
-#%%
-idx, fact, ht = get_random_img_idx()
+
 #%%
 def is_overlap(x, y, ht):
     '''
@@ -121,21 +119,17 @@ def get_cor(ht):
     Results out the co-ordinates of the images such that they don't overlap
     '''
     n = len(ht)
-    max_ht = int((max(ht)+1)/2)
+    max_ht = max(ht)
     x = [max_ht]*n
     y = [max_ht]*n
     while(is_overlap(x, y, ht)):
-        x = random.sample(range(max_ht, 448-max_ht), n)
-        y = random.sample(range(max_ht, 448-max_ht), n)
+        x = random.sample(range(0, 224-max_ht), n)
+        y = random.sample(range(0, 224-max_ht), n)
     return x, y
-#%%
-# start = timeit.default_timer()
-x, y = get_cor(ht)
-# stop = timeit.default_timer()
-# print('Time: ', stop - start)
+
 #%%
 def gen_image(x,y,idx,fact):
-    img = np.zeros((448,448,3))
+    img = np.zeros((224,224,3))
     for i in range(len(idx)):
         tmp = img_resize(lt_img[idx[i]], fact[i])
         l = tmp.shape[0]
@@ -147,5 +141,8 @@ def gen_image(x,y,idx,fact):
             for cy in range(l):
                 img[sx+cx][sy+cy] = tmp[cx][cy]
     return img.astype('int')
+
 #%%
+idx, fact, ht = get_random_img_idx()
+x, y = get_cor(ht)
 res = gen_image(x, y, idx, fact)
