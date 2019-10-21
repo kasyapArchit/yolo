@@ -19,19 +19,30 @@ def get_img(len, data):
     '''
     return data.reshape(len, 3, 32, 32).transpose([0, 2, 3, 1])
 
-def get_nm():
+def get_nm(cl):
     '''
     Load the class list
     '''
-    data = unpickle('cifar-10/batches.meta')
-    lt_nm = data[b'label_names']
+    if cl==10:
+        data = unpickle('cifar-10/batches.meta')
+        lt_nm = data[b'label_names']
+    else:
+        data = unpickle('cifar-100/meta')
+        lt_nm = data[b'fine_label_names']
     del data
     return lt_nm
 
-def get_train_data():
+def get_train_data(cl):
     '''
-    Generate a list of all the train images in CIFAR-10
+    Generate a list of all the train images in CIFAR-10 or CIFAR-100
     '''
+    if cl==100:
+        data = unpickle('cifar-100/train')
+        lt_img_train = data[b'data']
+        lt_lab_train = data[b'fine_labels']
+        lt_img_train = get_img(50000, lt_img_train).astype('int')
+        return lt_img_train, lt_lab_train
+
     lt_img_train = np.empty([0])
     lt_lab_train = []
     path = 'cifar-10/data_batch_'
@@ -43,20 +54,24 @@ def get_train_data():
         lt_img_train = np.append(lt_img_train, tmp_img)
         del data, tmp_img, tmp_lab
 
-    lt_img_train = get_img(50000, lt_img_train)
-    lt_img_train = lt_img_train.astype(int)
+    lt_img_train = get_img(50000, lt_img_train).astype(int)
     return lt_img_train, lt_lab_train
 
-def get_test_data():
+def get_test_data(cl):
     '''
     Generate a list of all the test images in CIFAR-10
     '''
+    if cl==100:
+        data = unpickle('cifar-100/test')
+        lt_img_test = data[b'data']
+        lt_lab_test = data[b'fine_labels']
+        lt_img_test = get_img(10000, lt_img_test).astype(int)
+        return lt_img_test, lt_lab_test
+
     data = unpickle('cifar-10/test_batch')
     lt_img_test = data[b'data']
     lt_lab_test = data[b'labels']
-
-    lt_img_test = get_img(10000, lt_img_test)
-    lt_img_test = lt_img_test.astype(int)
+    lt_img_test = get_img(10000, lt_img_test).astype(int)
     return lt_img_test, lt_lab_test
 
 
@@ -209,6 +224,12 @@ def make_test(sz, num):
     return 0
 
 #%%
-lt_nm = get_nm()
-lt_img_train, lt_lab_train = get_train_data()
-lt_img_test, lt_lab_test = get_test_data()
+# for CIFAR-10
+lt_nm = get_nm(10)
+lt_img_train, lt_lab_train = get_train_data(10)
+lt_img_test, lt_lab_test = get_test_data(10)
+#%%
+# for CIFAR-100
+lt_nm = get_nm(100)
+lt_img_train, lt_lab_train = get_train_data(100)
+lt_img_test, lt_lab_test = get_test_data(100)
